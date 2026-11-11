@@ -1,3 +1,9 @@
+const fs = require("node:fs/promises");
+const path = require("node:path");
+
+const filePath = path.join(__dirname, "..", "employees.json");
+
+
 
 const employees = [
     /*{
@@ -54,10 +60,13 @@ async function addEmployee(rl) {
     };
 
     employees.push(employee)
+    
+    await saveEmployees();
+
     console.log("Employee added successfully!")
 }
 
-// List Employees
+
 function listEmployees() {
     if (employees.length === 0) {
         console.log("No employees found")
@@ -72,7 +81,7 @@ function listEmployees() {
     }
 }
 
-// Start application
+
 
 async function searchEmployee(rl) {
     const id = Number(await rl.question("Enter Employee ID: "))
@@ -108,6 +117,7 @@ async function searchEmployee(rl) {
                 return employee.id !== id    
             })
             employees.splice(0, employees.length, ...result);
+            await saveEmployees();
             console.log("Employee deleted successfully")  
            
         }
@@ -134,19 +144,69 @@ async function searchEmployee(rl) {
                 console.log("Invalid salary");
                 return;
        }
-            employee.name = newName.trim() === "" ? employee.name : newName.trim()
+        employee.name = newName.trim() === "" ? employee.name : newName.trim()
             employee.department = newDepartment.trim() === "" ? employee.department : newDepartment.trim()
             employee.salary = newSalary.trim() === "" ? employee.salary : salary;
         console.log("Employee updated successfully");
         console.log(employee);
+        await saveEmployees();
+
     }
-        
-       
+     
+    }
+
+    async function loadEmployees() {
+    try {
+        const data = await fs.readFile(filePath, "utf8");
+        const records = JSON.parse(data);
+        if (!Array.isArray(records)) {
+     throw new Error("Employee data must be an array");
 }
+        employees.splice(0, employees.length, ...records);
+
+        console.log("Employee data loaded successfully");
+
+    } catch (error) {
+        if (error.code === "ENOENT") {
+            console.log("No employee data found. Starting with an empty list.");
+        }
+        else {
+            console.log("Error loading employee data:", error.message);
+        
+    }
+}
+         
+}
+
+    async function saveEmployees(){
+        try{
+        
+       await fs.writeFile(filePath, JSON.stringify(employees, null, 2));
+       console.log("Employee data saved successfully");
+        }
+        catch(error) {
+             if (error.code === "EACCES") {
+            console.log("Permission denied");
+        }
+        else if (error.code === "ENOENT") {
+            console.log("File path not found");
+        }
+        else if (error.code === "ENOSPC") {
+            console.log("Storage space is full");
+        }
+        else {
+            console.log("Error saving employee data:", error.message);
+        }
+        }
+    }
 module.exports = {
     addEmployee,
     listEmployees,
     searchEmployee,
     deleteEmployee,
-    updateEmployee
+    updateEmployee,
+    loadEmployees,
+    saveEmployees
 };
+
+    
